@@ -2,6 +2,9 @@ package com.google;
 
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class VideoPlayer {
 
@@ -302,12 +305,60 @@ public class VideoPlayer {
 
 
   public void searchVideos(String searchTerm) {
-    System.out.println("searchVideos needs implementation");
+//    System.out.println("searchVideos needs implementation"); // done
+
+    searchVideosBy(x -> x.getTitle().toLowerCase().contains(searchTerm.toLowerCase()), searchTerm);
+
   }
 
   public void searchVideosWithTag(String videoTag) {
-    System.out.println("searchVideosWithTag needs implementation");
+//    System.out.println("searchVideosWithTag needs implementation"); // done
+
+    searchVideosBy(x -> x.getTags().stream()
+            .anyMatch(t -> t.toLowerCase().contains(videoTag.toLowerCase())), videoTag);
+
   }
+
+
+  private void searchVideosBy(Predicate<Video> function, String searchString) {
+    List<Video> videos = videoLibrary.getVideos().stream()
+            .filter(function)
+            .sorted(Comparator.comparing(Video::getTitle))
+            .collect(Collectors.toList());
+    if (videos.isEmpty()) {
+      System.out.println("No search results for " + searchString);
+    } else {
+      System.out.printf("Here are the results for %s:%n", searchString);
+      AtomicInteger number = new AtomicInteger();
+      videos.forEach(v -> {
+        number.getAndIncrement();
+        System.out.println(number + ") " + String.format("%s (%s) [%s]", v.getTitle(), v.getVideoId(), v.getTags().stream().reduce((t, s) -> t + " " + s).orElse(""))
+
+        );
+      });
+      System.out.println("Would you like to play any of the above? "
+              + "If yes, specify the number of the video.\n"
+              + "If your answer is not a valid number, we will assume it's a no.");
+      int answer;
+      try {
+        answer = new Scanner(System.in).nextInt() - 1;
+      } catch (InputMismatchException ignored) {
+        answer = -1;
+      }
+      if (answer >= 0 && answer < videos.size()) {
+        playVideo(videos.get(answer).getVideoId());
+      }
+    }
+  }
+
+
+
+
+
+  /**
+   * PART 4
+   */
+
 
   public void flagVideo(String videoId) {
     System.out.println("flagVideo needs implementation");
